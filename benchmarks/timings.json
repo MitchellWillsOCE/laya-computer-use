@@ -1,0 +1,205 @@
+{
+  "recorded": "2026-09-27",
+  "machine": {
+    "cpu": "AMD Ryzen 7 5700X (8 cores, 16 threads)",
+    "ram_bytes": 17096560640,
+    "ram_free_mib_at_check": 5403,
+    "gpu": "NVIDIA GeForce RTX 3070 Ti",
+    "gpu_mib": 8192,
+    "gpu_driver": "581.29",
+    "gpu_used_mib_with_laya_loaded": 3367,
+    "gpu_free_mib_with_laya_loaded": 4651
+  },
+  "grok_reference": {
+    "source": "AILatency Grok 4.6 snapshot, 2026-09-07",
+    "url": "https://www.ailatency.com/models/xai-grok-4-6.html",
+    "average_total_response_ms": 2150,
+    "time_to_first_token_ms": 508,
+    "note": "Short API completion. Not a clock of Grok Bot on this machine. Grok Bot also writes PowerShell and waits for local execution. Applied below as 2150 ms times the number of replies."
+  },
+  "strategies": [
+    {
+      "id": "baseline-fixture",
+      "strategy": "Confidence gate 0.60. Check, uncheck, and select always return to the caller. A screenshot is saved on every needs_action.",
+      "goal": "Uncheck Follow company, select Resume A, and click Next",
+      "page": "tests/fixture.html",
+      "caller": "Instant local stand-in. Grok think time is 0 in wall_ms.",
+      "iterations": [
+        {
+          "wall_ms": 4638.0,
+          "observe_ms": 83.1,
+          "laya_ms": 934.7,
+          "screenshot_ms": 330.7,
+          "browser_ms": 3289.6,
+          "handoffs": 8,
+          "steps": 9,
+          "final_status": "needs_action",
+          "operation_confidence": [0.9228, 0.9001, 0.8872, 0.8872, 0.8872, 0.8872, 0.8872, 0.8872, 0.8872]
+        }
+      ]
+    },
+    {
+      "id": "lower-gate-auto-form-no-handoff-screenshot",
+      "strategy": "Confidence gate 0.35. Check, uncheck, and select run locally when confident and the control is unambiguous. needs_action does not save a screenshot.",
+      "goal": "Uncheck Follow company, select Resume A, and click Next",
+      "page": "tests/fixture.html",
+      "caller": "Instant local stand-in. Grok think time is 0 in wall_ms.",
+      "result": "Not faster. Uncheck confidence was already above 0.60, so the lower gate did not change clicks. After the box was clear, Laya kept proposing uncheck and each proposal still returned to the caller.",
+      "iterations": [
+        {
+          "wall_ms": 4782.5,
+          "observe_ms": 51.1,
+          "laya_ms": 972.1,
+          "screenshot_ms": 0.0,
+          "browser_ms": 3759.4,
+          "handoffs": 8,
+          "steps": 10,
+          "confidence_gate": 0.35,
+          "final_status": "needs_action",
+          "operation_confidence": [0.9151, 0.8952, 0.8984, 0.8984, 0.8984, 0.8984, 0.8984, 0.8984, 0.8984, 0.8984]
+        }
+      ]
+    },
+    {
+      "id": "local-ollama-models",
+      "strategy": "Replace the Grok decision with a downloaded Ollama model. Ollama 0.34.4. num_ctx 2048 for Llama unless noted. Thinking off for the Gemma decision calls.",
+      "result": "None was suitable. The models that fit the GPU chose the wrong next action. The 12B model spilled onto the CPU and was slower than one short Grok call.",
+      "iterations": [
+        {
+          "model": "llama3.2:3b",
+          "parameters": "3.2B Q4_K_M",
+          "disk_gb": 2.0,
+          "call": 1,
+          "state": "cold",
+          "wall_ms": 46376.6,
+          "total_ms": 46325.5,
+          "load_ms": 28149.9,
+          "eval_ms": 149.7,
+          "tokens": 25,
+          "response": "{\"action\":\"select\",\"element_id\":\"2\",\"value\":\"Resume A\"},{\"action\":\"click\",\"element_id\":\"3\"}",
+          "correct_next_action": false
+        },
+        {
+          "model": "llama3.2:3b",
+          "call": 2,
+          "state": "warm",
+          "total_ms": 2477.7,
+          "load_ms": 2142.9,
+          "prompt_ms": 70,
+          "eval_ms": 261.8,
+          "tokens": 40,
+          "response": "Here is the JSON object for the single next action: ``` { \"type\": \"click\", \"selector\": { \"type\": \"checkbox\", \"value\": \"Follow company",
+          "correct_next_action": false
+        },
+        {
+          "model": "llama3.2:3b",
+          "call": 3,
+          "state": "warm",
+          "total_ms": 237,
+          "load_ms": 2.5,
+          "prompt_ms": 6,
+          "eval_ms": 225.7,
+          "tokens": 40,
+          "response": "Here is the JSON object for the single next action: ``` { \"type\": \"click\", \"selector\": { \"type\": \"checkbox\", \"value\": \"Follow company",
+          "correct_next_action": false
+        },
+        {
+          "model": "gemma4-uncensored:latest",
+          "parameters": "7.5B Q4_K_M",
+          "disk_gb": 5.4,
+          "call": 1,
+          "task": "say ok",
+          "context": 512,
+          "processor": "100% GPU",
+          "resident_gb": 3.2,
+          "total_ms": 20598.8,
+          "load_ms": 13773.3,
+          "eval_ms": 60.1,
+          "response": "ok"
+        },
+        {
+          "model": "gemma4-uncensored:latest",
+          "call": 2,
+          "task": "say ok",
+          "context": 4096,
+          "processor": "100% GPU",
+          "resident_gb": 3.2,
+          "total_ms": 7253.3,
+          "load_ms": 6940.6,
+          "eval_ms": 52.3,
+          "response": "ok"
+        },
+        {
+          "model": "gemma4-uncensored:latest",
+          "call": 3,
+          "task": "single next driver action",
+          "think": false,
+          "context": 4096,
+          "state": "cold",
+          "total_ms": 7145.4,
+          "load_ms": 6685.6,
+          "prompt_ms": 290.1,
+          "eval_ms": 163.9,
+          "tokens": 12,
+          "response": "{\"action\":\"select\",\"element_id\":\"2\"}",
+          "correct_next_action": false
+        },
+        {
+          "model": "gemma4-uncensored:latest",
+          "call": 4,
+          "task": "single next driver action",
+          "think": false,
+          "context": 4096,
+          "state": "warm",
+          "total_ms": 157,
+          "load_ms": 3.5,
+          "prompt_ms": 35.2,
+          "eval_ms": 115.3,
+          "tokens": 12,
+          "response": "{\"action\":\"select\",\"element_id\":\"2\"}",
+          "correct_next_action": false
+        },
+        {
+          "model": "hf.co/HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M",
+          "parameters": "11.9B Q4_K_M",
+          "disk_gb": 7.6,
+          "call": 1,
+          "task": "say ok",
+          "processor": "31% CPU / 69% GPU",
+          "resident_gb": 8.9,
+          "context": 2048,
+          "total_ms": 48707,
+          "load_ms": 23523.8,
+          "eval_ms": 6665.2,
+          "response": "ok"
+        }
+      ]
+    },
+    {
+      "id": "batch-reply-and-short-packet",
+      "strategy": "One POST /reply carries up to 8 actions. Choice packets omit page text and keep id, role, name, value, checked, selected, disabled, and href when present.",
+      "goal": "Uncheck Follow company, select Resume A, and click Next",
+      "page": "tests/fixture.html dialog",
+      "runs": 5,
+      "statistic": "median",
+      "separate_replies": {
+        "turns": 3,
+        "driver_ms_iterations": [606.6, 580.3, 567.2, 566.1, 570.6],
+        "driver_ms_median": 570.6,
+        "grok_ms": 6450.0,
+        "total_ms": 7020.6,
+        "slim_packet_bytes_median": 4463,
+        "previous_fat_packet_bytes_median": 10563
+      },
+      "one_action_list": {
+        "turns": 1,
+        "driver_ms_iterations": [566.2, 576.5, 577.2, 561.6, 560.6],
+        "driver_ms_median": 566.2,
+        "grok_ms": 2150.0,
+        "total_ms": 2716.2,
+        "slim_packet_bytes_median": 1488
+      },
+      "method": "Headless Playwright, no Laya load. Separate-reply timing includes building the previous fat packet (page text and full element fields) after each reply. Grok milliseconds are 2150 times the reply count. Per-iteration packet byte counts were not stored; the byte figures are medians of the same five runs."
+    }
+  ]
+}

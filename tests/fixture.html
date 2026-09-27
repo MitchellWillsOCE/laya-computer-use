@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Laya driver fixture</title></head>
+<body>
+  <a href="#main">Skip to main content</a>
+  <button>Background action</button>
+  <main id="main">Background content</main>
+
+  <section role="dialog" aria-modal="true">
+    <h1>Application submitted — 東京</h1>
+    <label for="phone">Phone number</label>
+    <input id="phone" required aria-invalid="true" aria-describedby="phone-error">
+    <span id="phone-error">Phone is required</span>
+
+    <label><input id="follow" type="checkbox" checked> Follow company</label>
+
+    <label for="resume">Resume card</label>
+    <select id="resume">
+      <option>Resume A</option>
+      <option selected>Resume B</option>
+    </select>
+
+    <input id="empty-unlabelled">
+    <button>Next</button>
+  </section>
+</body>
+</html>

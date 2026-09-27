@@ -1,0 +1,5 @@
+laya>=0.3.20
+playwright>=1.49
+# PyPI torch is CPU-only. This machine uses the CUDA 13 wheel:
+# pip uninstall -y torch
+# pip install torch --index-url https://download.pytorch.org/whl/cu130
