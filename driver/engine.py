@@ -128,26 +128,12 @@ class Engine:
 
     def elements_packet(self, query: str | None = None) -> dict:
         self._activate_latest_page()
-        elements = self._observe_page(0)
+        elements = self._observe_page(0, whole_page=True)
         self.full_elements = elements
         if query:
-            needle = query.casefold()
-
-            def matches(element: dict) -> bool:
-                return needle in " ".join(
-                    str(element.get(key) or "")
-                    for key in (
-                        "id",
-                        "role",
-                        "name",
-                        "value",
-                        "selected",
-                        "error",
-                        "href",
-                    )
-                ).casefold()
-
-            elements = [element for element in elements if matches(element)]
+            elements = [
+                element for element in elements if _query_matches(element, query)
+            ]
         return {
             "status": self.status,
             "step": self.step,
@@ -190,7 +176,18 @@ class Engine:
         target = url or _first_url(self.goal)
         if target:
             self._goto(target)
-        return self.run_until_stop()
+        try:
+            self._refresh_elements()
+        except Exception:
+            self.visible = []
+        self.status = "needs_action"
+        reason = (
+            "No controls were visible on the page. Scroll, read, or navigate."
+            if not self.visible
+            else "Task started. Nothing has been clicked. Choose the next actions for this page."
+        )
+        self.pending = {"kind": "action", "prompt": reason, "suggestion": None}
+        return self._packet("needs_action", prompt=reason)
 
     def reply(
         self,
@@ -228,13 +225,11 @@ class Engine:
             self.goal = ""
             self.status = "aborted"
             return self._packet("aborted")
-        if self.pending is None:
-            if action in {"new_tab", "switch_tab", "close_tab", "read"}:
-                self.pending = {"kind": "action", "prompt": "Direct browser action."}
-                return self._run_external_action(
-                    action, element_id, text, submit, payload
-                )
-            return self._error("nothing is waiting for a reply")
+        if self.pending is None and action:
+            self.pending = {"kind": "action", "prompt": "Continuing after the previous status."}
+            return self._run_external_action(
+                action, element_id, text, submit, payload
+            )
         kind = self.pending.get("kind")
         if kind == "url":
             if not text:
@@ -314,7 +309,10 @@ class Engine:
                 )
                 self.visible = elements
             if not elements:
-                return self._stop("blocked", "No controls were visible on the page.")
+                return self._needs_action(
+                    {"operation": "BLOCKED", "click_target": "none", "type_target": "none"},
+                    "No controls were visible on the page. Scroll, read, or navigate.",
+                )
             decision = self._decide(elements)
             interrupted = self._abort_if_interrupted()
             if interrupted is not None:
@@ -381,6 +379,7 @@ class Engine:
                     elements,
                     decision,
                     want_checked=(operation == "UNCHECK"),
+                    goal=self.goal,
                 )
                 if element is None:
                     return self._needs_action(
@@ -414,9 +413,15 @@ class Engine:
                 continue
 
             if operation == "DONE":
-                return self._stop("done", "The goal is on screen.")
+                return self._needs_action(
+                    decision,
+                    "Laya thinks the goal is already done. Send action done only if the page agrees.",
+                )
             if operation == "BLOCKED":
-                return self._stop("blocked", "Laya marked this screen blocked.")
+                return self._needs_action(
+                    decision,
+                    "Laya marked this screen blocked, but the page is still open. Choose an action, or send blocked with a reason.",
+                )
             if operation == "WAIT":
                 self.page.wait_for_timeout(1200)
                 continue
@@ -442,7 +447,10 @@ class Engine:
                 interrupted = self._abort_if_interrupted()
                 if interrupted is not None:
                     return interrupted
-                self._click_id(element["id"], element.get("name"), element.get("role"))
+                try:
+                    self._click_id(element["id"], element.get("name"), element.get("role"))
+                except Exception as exc:
+                    return self._action_failure(exc)
                 continue
             if operation == "TYPE_TEXT":
                 element = _find(elements, decision["type_target"])
@@ -954,7 +962,7 @@ class Engine:
             self.visible, element_id
         )
 
-    def _observe_page(self, cap: int | None = None) -> list[dict]:
+    def _observe_page(self, cap: int | None = None, whole_page: bool = False) -> list[dict]:
         """Retry DOM extraction while a click or Enter is replacing the document."""
         last_error: Exception | None = None
         for _ in range(8):
@@ -962,6 +970,7 @@ class Engine:
                 return observe(
                     self.page,
                     self.observe_cap if cap is None else cap,
+                    whole_page=whole_page,
                 )
             except Exception as exc:
                 last_error = exc
@@ -1190,21 +1199,38 @@ def _named_target(elements: list[dict], decision: dict, predicate) -> dict | Non
 
 
 def _checkable_target(
-    elements: list[dict], decision: dict, want_checked: bool
+    elements: list[dict], decision: dict, want_checked: bool, goal: str = ""
 ) -> dict | None:
     named = _named_target(elements, decision, _is_checkable)
     if named is not None:
         return named
+    folded_goal = (goal or "").lower()
     matches = [
         element
         for element in elements
         if _is_checkable(element)
         and element.get("checked") is want_checked
         and not element.get("disabled")
+        and (element.get("name") or "").strip()
+        and (element.get("name") or "").lower() in folded_goal
     ]
     if len(matches) == 1:
         return matches[0]
     return None
+
+
+def _query_matches(element: dict, query: str) -> bool:
+    haystack = " ".join(
+        str(element.get(key) or "")
+        for key in ("id", "role", "name", "value", "selected", "error", "href", "tag")
+    ).casefold()
+    needle = (query or "").casefold().strip()
+    if not needle:
+        return True
+    if needle in haystack:
+        return True
+    words = [word for word in re.findall(r"[a-z0-9]+", needle) if len(word) >= 2]
+    return bool(words) and all(word in haystack for word in words)
 
 
 def _select_target(elements: list[dict], decision: dict) -> dict | None:

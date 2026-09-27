@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380" role="img" aria-labelledby="title desc">
+  <title id="title">Recorded time by strategy</title>
+  <desc id="desc">Three replies take 7020.6 milliseconds. The lower confidence gate takes 4782.5 milliseconds. Baseline takes 4638 milliseconds. One action list takes 2716.2 milliseconds.</desc>
+  <rect width="760" height="380" fill="#f6f5f2"/>
+  <text x="32" y="36" fill="#1c1c1c" font-family="Segoe UI, sans-serif" font-size="18">Recorded time by strategy</text>
+  <text x="32" y="58" fill="#5c5a55" font-family="Segoe UI, sans-serif" font-size="13">One action list is 2,716.2 ms. Three replies are 7,020.6 ms.</text>
+  <rect x="32" y="76" width="14" height="14" fill="#c45c26"/>
+  <text x="52" y="88" fill="#1c1c1c" font-family="Segoe UI, sans-serif" font-size="13">Local driver</text>
+  <rect x="160" y="76" width="14" height="14" fill="#3d6f99"/>
+  <text x="180" y="88" fill="#1c1c1c" font-family="Segoe UI, sans-serif" font-size="13">Grok Bot reply, 2,150 ms times the reply count</text>
+  <g font-family="Segoe UI, sans-serif" font-size="13" fill="#1c1c1c">
+    <text x="188" y="128" text-anchor="end">Three replies</text>
+    <text x="188" y="184" text-anchor="end">Lower confidence gate</text>
+    <text x="188" y="240" text-anchor="end">Baseline</text>
+    <text x="188" y="296" text-anchor="end">One action list</text>
+  </g>
+  <g fill="#c45c26">
+    <rect x="200" y="112" width="37.1" height="22"/>
+    <rect x="200" y="168" width="310.9" height="22"/>
+    <rect x="200" y="224" width="301.5" height="22"/>
+    <rect x="200" y="280" width="36.8" height="22"/>
+  </g>
+  <g fill="#3d6f99">
+    <rect x="237.1" y="112" width="419.3" height="22"/>
+    <rect x="236.8" y="280" width="139.8" height="22"/>
+  </g>
+  <g stroke="#d9d6cf" stroke-width="1">
+    <line x1="200" y1="104" x2="200" y2="316"/>
+    <line x1="330" y1="104" x2="330" y2="316"/>
+    <line x1="460" y1="104" x2="460" y2="316"/>
+    <line x1="590" y1="104" x2="590" y2="316"/>
+    <line x1="720" y1="104" x2="720" y2="316"/>
+  </g>
+  <g fill="#5c5a55" font-family="Segoe UI, sans-serif" font-size="12" text-anchor="middle">
+    <text x="200" y="334">0</text>
+    <text x="330" y="334">2,000</text>
+    <text x="460" y="334">4,000</text>
+    <text x="590" y="334">6,000</text>
+    <text x="720" y="334">8,000</text>
+  </g>
+  <text x="460" y="358" text-anchor="middle" fill="#5c5a55" font-family="Segoe UI, sans-serif" font-size="12">Time (ms)</text>
+</svg>

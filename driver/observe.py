@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 OBSERVE_JS = r"""
-({ cap }) => {
+({ cap, wholePage }) => {
   window.__layaStableIds ||= new Map();
   window.__layaNextId ||= 1;
   window.__layaDocumentId ||= (
@@ -48,7 +48,7 @@ OBSERVE_JS = r"""
     const modal = el.getAttribute("aria-modal") === "true" ? 1_000_000 : 0;
     return { el, score: topLayer + modal + (Number.isFinite(z) ? z : 0), index };
   }).sort((a, b) => a.score - b.score || a.index - b.index);
-  const dialog = dialogs.length ? dialogs[dialogs.length - 1].el : null;
+  const dialog = !wholePage && dialogs.length ? dialogs[dialogs.length - 1].el : null;
   const scope = dialog || document;
   const candidates = Array.from(scope.querySelectorAll(sel));
   scope.querySelectorAll("*").forEach((el) => {
@@ -225,8 +225,11 @@ READ_TEXT_JS = r"""
 """
 
 
-def observe(page, cap: int | None = None) -> list[dict]:
-    elements = page.evaluate(OBSERVE_JS, {"cap": max(0, int(cap or 0))})
+def observe(page, cap: int | None = None, whole_page: bool = False) -> list[dict]:
+    elements = page.evaluate(
+        OBSERVE_JS,
+        {"cap": max(0, int(cap or 0)), "wholePage": bool(whole_page)},
+    )
     return list(elements or [])
 
 

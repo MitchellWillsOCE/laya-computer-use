@@ -45,7 +45,7 @@ The service listens only on `127.0.0.1:8765` and requires the bearer token in `.
 - `/reply` accepts `actions`, a list of up to 8 actions for the current page. One `action` field still works. The list stops when an element is missing, the page changes, or a sensitive control needs confirmation.
 - `/reply` actions: `click`, `type`, `select`, `press`, `check`, `uncheck`, `scroll`, `upload`, `read`, `wait`, `navigate`, `new_tab`, `switch_tab`, `close_tab`, `done`, `blocked`, and `abort`. `press_enter` remains supported.
 - `type` and `needs_text` replies accept `submit: true`.
-- `/task` accepts `max_steps`, `observe_cap`, and `element_limit`. A new task replaces the previous one. Omitting `url` keeps the current page unless the goal itself contains a URL.
+- `/task` accepts `max_steps`, `observe_cap`, and `element_limit`. A new task replaces the previous one and does not click. Omitting `url` keeps the current page unless the goal itself contains a URL. Laya's done and blocked opinions wait for a reply.
 
 Examples:
 
@@ -59,9 +59,16 @@ Examples:
 
 ## Measured times
 
-Every recorded run is in [`benchmarks/timings.json`](benchmarks/timings.json), including each iteration.
+![Recorded time by strategy. One action list is 2,716.2 ms. Three replies are 7,020.6 ms.](benchmarks/strategy-times.svg)
 
-On this PC, three separate replies for uncheck, select, and click took 7,020.6 ms. One action list took 2,716.2 ms. Driver time stayed about 570 ms either way. The difference is one Grok reply instead of three, using a published 2,150 ms short-completion average. Lowering the confidence gate, auto-running check and select, and dropping handoff screenshots did not shorten the fixture task. The downloaded Ollama models were either too inaccurate or too slow to take those decisions.
+Baseline and the lower confidence gate used an instant stand-in, so those bars have no Grok segment. The five driver iterations were:
+
+| Strategy | Driver time each run (ms) | Median (ms) |
+|---|---|---:|
+| Three replies | 606.6, 580.3, 567.2, 566.1, 570.6 | 570.6 |
+| One action list | 566.2, 576.5, 577.2, 561.6, 560.6 | 566.2 |
+
+Every recorded run, including the single-run strategies and the local model calls, is in [`benchmarks/timings.json`](benchmarks/timings.json).
 
 ## Verification
 

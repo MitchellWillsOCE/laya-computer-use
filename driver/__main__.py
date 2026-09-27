@@ -47,7 +47,7 @@ $token = (Get-Content -Raw "{root}\\.token").Trim()
 $headers = @{{ Authorization = "Bearer $token" }}
 Invoke-RestMethod -Uri http://127.0.0.1:8765/task -Method Post -Headers $headers -ContentType "application/json" -Body (@{{ goal = "GOAL"; max_steps = 30; observe_cap = 120; element_limit = 40 }} | ConvertTo-Json)
 
-A new /task always replaces an old running, blocked, or failed task. If no URL is supplied in url or the goal, the current tab is retained.
+A new /task always replaces an old running, blocked, or failed task and does not click anything. If no URL is supplied in url or the goal, the current tab is retained. If status is done, you can still send actions; you do not need a new task to continue.
 
 Keep the complete response object, including error, elements, and suggestion. Then follow status until it is done, aborted, or error:
 
@@ -79,7 +79,7 @@ Use GET /elements?query=TEXT when a needed control is absent or you need the pag
 - blocked: read the prompt and the screenshot path in the JSON. Tell me what is on screen and what you need. After I have logged in or cleared the page in the Chromium window, send:
   Invoke-RestMethod -Uri http://127.0.0.1:8765/reply -Method Post -Headers $headers -ContentType "application/json" -Body (@{{ action = "continue" }} | ConvertTo-Json)
 
-- done: tell me the final url and stop calling the driver.
+- done: this is only set when you send action done. Laya suggesting done is needs_action, not permission to stop. Tell me the final url and stop calling the driver only after you send action done.
 - error: show me the complete error field verbatim. A new task or navigate action may recover it.
 
 Approve the local PowerShell command when the app asks. Do not browse with computer use while this driver is working. Call /stop only if I tell you to cancel.

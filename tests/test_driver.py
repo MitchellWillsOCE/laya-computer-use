@@ -290,7 +290,8 @@ def test_confident_uncheck_and_select_run_locally():
         assert page.locator("#follow").is_checked() is False
         selected = page.locator("#resume").evaluate("el => el.selectedOptions[0].text")
         assert selected == "Resume A"
-        assert packet["status"] == "done"
+        assert packet["status"] == "needs_action"
+        assert packet["suggestion"]["operation"] == "DONE"
         browser.close()
 
 
@@ -386,9 +387,61 @@ def test_action_list_and_choice_packet():
         browser.close()
 
 
+def test_new_task_does_not_click_and_search_matches_words():
+    page_html = """
+    <button id="bg">Background listing</button>
+    <section role="dialog" aria-modal="true">
+      <button id="next">Next</button>
+      <a href="https://example.com/jobs/senior-software-engineer">Senior Software Engineer</a>
+    </section>
+    """
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.set_content(page_html)
+        page.locator("#next").evaluate(
+            "el => el.addEventListener('click', () => { el.dataset.clicked = 'yes'; })"
+        )
+        engine = Engine()
+        engine.playwright = playwright
+        engine.context = page.context
+        engine.page = page
+        engine._attach_page(page)
+        engine.run_until_stop = lambda: engine._packet("needs_action")
+
+        def explode(_elements):
+            raise AssertionError("a new task must not ask Laya to click")
+
+        engine._decide = explode
+        packet = engine.task("continue the application", None)
+        assert packet["status"] == "needs_action"
+        assert "Nothing has been clicked" in packet["prompt"]
+        assert page.locator("#next").get_attribute("data-clicked") is None
+
+        titled = engine.elements_packet("Senior Engineer")
+        assert any(
+            "Senior Software Engineer" in (element.get("name") or "")
+            for element in titled["elements"]
+        )
+        background = engine.elements_packet("Background listing")
+        assert any(
+            element.get("name") == "Background listing"
+            for element in background["elements"]
+        )
+
+        nxt = _by_name(engine.full_elements, "Next")
+        engine.pending = None
+        engine.status = "done"
+        continued = engine.reply(None, "click", nxt["id"])
+        assert continued["status"] == "needs_action"
+        assert page.locator("#next").get_attribute("data-clicked") == "yes"
+        browser.close()
+
+
 if __name__ == "__main__":
     test_observer_fields_dialog_state_and_stable_ids()
     test_engine_actions_tabs_screenshot_and_recovery()
     test_confident_uncheck_and_select_run_locally()
     test_action_list_and_choice_packet()
+    test_new_task_does_not_click_and_search_matches_words()
     print("driver tests ok")
